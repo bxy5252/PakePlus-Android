@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>清爽记账 - 极简财务管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', 'Microsoft YaHei', sans-serif; background-color: #f8fafc; }
+        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800">
+
+    <div id="app" class="max-w-4xl mx-auto p-4 md:p-8">
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-2xl font-bold text-indigo-600 flex items-center gap-2">
+                    <i data-lucide="wallet"></i> 清爽记账
+                </h1>
+                <p class="text-slate-500 text-sm">掌控你的每一分钱</p>
+            </div>
+            <div id="user-info" class="text-xs text-slate-400 bg-white px-3 py-1 rounded-full border border-slate-100">
+                正在同步云端...
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <div class="flex items-center gap-3 mb-2 text-slate-500">
+                    <i data-lucide="trending-up" class="w-4 h-4 text-emerald-500"></i>
+                    <span class="text-sm font-medium">总收入</span>
+                </div>
+                <div class="text-2xl font-bold text-emerald-600" id="total-income">¥0.00</div>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <div class="flex items-center gap-3 mb-2 text-slate-500">
+                    <i data-lucide="trending-down" class="w-4 h-4 text-rose-500"></i>
+                    <span class="text-sm font-medium">总支出</span>
+                </div>
+                <div class="text-2xl font-bold text-rose-600" id="total-expense">¥0.00</div>
+            </div>
+            <div class="bg-indigo-600 p-6 rounded-2xl shadow-lg text-white">
+                <div class="flex items-center gap-3 mb-2 opacity-80">
+                    <i data-lucide="piggy-bank" class="w-4 h-4"></i>
+                    <span class="text-sm font-medium">账户余额</span>
+                </div>
+                <div class="text-2xl font-bold" id="balance">¥0.00</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+            <div class="lg:col-span-3 space-y-6">
+                <!-- 添加账目卡片 -->
+                <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <h3 class="font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i> 新增账目
+                    </h3>
+                    <form id="entry-form" class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 mb-1">金额</label>
+                                <input type="number" id="amount" step="0.01" required placeholder="0.00" class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 mb-1">分类</label>
+                                <select id="category" class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                                    <option value="餐饮">🍔 餐饮</option>
+                                    <option value="交通">🚗 交通</option>
+                                    <option value="购物">🛍️ 购物</option>
+                                    <option value="娱乐">🎮 娱乐</option>
+                                    <option value="居家">🏠 居家</option>
+                                    <option value="工资">💰 工资</option>
+                                    <option value="其他">📦 其他</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 mb-1">类型</label>
+                                <div class="flex bg-slate-100 p-1 rounded-xl">
+                                    <button type="button" onclick="setMode('expense')" id="mode-expense" class="flex-1 py-1.5 rounded-lg text-sm font-medium transition-all bg-white shadow-sm text-rose-600">支出</button>
+                                    <button type="button" onclick="setMode('income')" id="mode-income" class="flex-1 py-1.5 rounded-lg text-sm font-medium transition-all text-slate-500">收入</button>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 mb-1">日期</label>
+                                <input type="date" id="date" required class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl shadow-md transition-all flex justify-center items-center gap-2">
+                            确认保存
+                        </button>
+                    </form>
+                </section>
+
+                <!-- 历史列表 -->
+                <section class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="p-6 border-b border-slate-50 flex justify-between items-center">
+                        <h3 class="font-semibold">最近记录</h3>
+                        <button onclick="clearAll()" class="text-xs text-slate-400 hover:text-rose-500 transition-all">清空全部</button>
+                    </div>
+                    <div id="transactions-list" class="max-h-[400px] overflow-y-auto custom-scrollbar">
+                        <!-- 动态填充 -->
+                        <div class="p-8 text-center text-slate-400">
+                            <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-20"></i>
+                            <p class="text-sm">暂无记录，开始记一笔吧</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="lg:col-span-2 space-y-6">
+                <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <h3 class="font-semibold mb-6 flex items-center gap-2">
+                        <i data-lucide="pie-chart" class="w-4 h-4"></i> 支出构成
+                    </h3>
+                    <div class="relative h-64">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </section>
+
+                <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <h3 class="font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="info" class="w-4 h-4"></i> 使用提示
+                    </h3>
+                    <ul class="text-xs text-slate-500 space-y-2">
+                        <li class="flex items-start gap-2">
+                            <span class="w-1 h-1 rounded-full bg-indigo-400 mt-1.5 shrink-0"></span>
+                            点击右侧列表的删除图标可移除单条记录。
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="w-1 h-1 rounded-full bg-indigo-400 mt-1.5 shrink-0"></span>
+                            数据会自动同步到云端，更换浏览器可能需要重新加载。
+                        </li>
+                    </ul>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- 消息提示框 -->
+    <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded-2xl shadow-2xl transition-all opacity-0 pointer-events-none z-50">
+        已成功保存
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, collection, onSnapshot, addDoc, deleteDoc, query, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // 配置与初始化
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'zen-ledger-demo';
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let currentUser = null;
+        let transactions = [];
+        let currentMode = 'expense';
+        let myChart = null;
+
+        // 设置日期默认为今天
+        document.getElementById('date').valueAsDate = new Date();
+
+        // 切换收入/支出模式
+        window.setMode = (mode) => {
+            currentMode = mode;
+            const expBtn = document.getElementById('mode-expense');
+            const incBtn = document.getElementById('mode-income');
+            if (mode === 'expense') {
+                expBtn.className = "flex-1 py-1.5 rounded-lg text-sm font-medium transition-all bg-white shadow-sm text-rose-600";
+                incBtn.className = "flex-1 py-1.5 rounded-lg text-sm font-medium transition-all text-slate-500";
+            } else {
+                incBtn.className = "flex-1 py-1.5 rounded-lg text-sm font-medium transition-all bg-white shadow-sm text-emerald-600";
+                expBtn.className = "flex-1 py-1.5 rounded-lg text-sm font-medium transition-all text-slate-500";
+            }
+        };
+
+        // 身份验证
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('user-info').innerText = `ID: ${user.uid.slice(0, 8)}...`;
+                initDataListener();
+            } else {
+                await signInAnonymously(auth);
+            }
+        });
+
+        // 监听数据变化
+        function initDataListener() {
+            if (!currentUser) return;
+            const path = `artifacts/${appId}/users/${currentUser.uid}/transactions`;
+            const q = collection(db, path);
+
+            onSnapshot(q, (snapshot) => {
+                transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                // 按日期排序
+                transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+                updateUI();
+            }, (error) => {
+                console.error("Firestore Error:", error);
+                showToast("同步出错");
+            });
+        }
+
+        // 更新界面展示
+        function updateUI() {
+            const listEl = document.getElementById('transactions-list');
+            const incEl = document.getElementById('total-income');
+            const expEl = document.getElementById('total-expense');
+            const balEl = document.getElementById('balance');
+
+            let totalInc = 0;
+            let totalExp = 0;
+            const catTotals = {};
+
+            if (transactions.length === 0) {
+                listEl.innerHTML = `
+                    <div class="p-8 text-center text-slate-400">
+                        <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-20"></i>
+                        <p class="text-sm">暂无记录，开始记一笔吧</p>
+                    </div>`;
+            } else {
+                listEl.innerHTML = transactions.map(t => {
+                    const isExp = t.type === 'expense';
+                    const amount = parseFloat(t.amount);
+                    if (isExp) {
+                        totalExp += amount;
+                        catTotals[t.category] = (catTotals[t.category] || 0) + amount;
+                    } else {
+                        totalInc += amount;
+                    }
+
+                    return `
+                        <div class="flex items-center justify-between p-4 hover:bg-slate-50 transition-all group border-b border-slate-50 last:border-0">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full ${isExp ? 'bg-rose-50 text-rose-500' : 'bg-emerald-50 text-emerald-500'} flex items-center justify-center font-bold">
+                                    ${t.category.slice(0, 2)}
+                                </div>
+                                <div>
+                                    <div class="font-medium text-sm">${t.category}</div>
+                                    <div class="text-[10px] text-slate-400">${t.date}</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="text-sm font-bold ${isExp ? 'text-rose-500' : 'text-emerald-500'}">
+                                    ${isExp ? '-' : '+'}¥${amount.toFixed(2)}
+                                </div>
+                                <button onclick="deleteEntry('${t.id}')" class="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-rose-50 rounded-lg text-slate-300 hover:text-rose-500 transition-all">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            incEl.innerText = `¥${totalInc.toFixed(2)}`;
+            expEl.innerText = `¥${totalExp.toFixed(2)}`;
+            balEl.innerText = `¥${(totalInc - totalExp).toFixed(2)}`;
+
+            updateChart(catTotals);
+            lucide.createIcons();
+        }
+
+        // 更新图表
+        function updateChart(data) {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            const labels = Object.keys(data);
+            const values = Object.values(data);
+
+            if (myChart) {
+                myChart.data.labels = labels;
+                myChart.data.datasets[0].data = values;
+                myChart.update();
+            } else {
+                myChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: values,
+                            backgroundColor: [
+                                '#6366f1', '#f43f5e', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#64748b'
+                            ],
+                            borderWidth: 0,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { usePointStyle: true, font: { size: 10 } } }
+                        },
+                        cutout: '70%'
+                    }
+                });
+            }
+        }
+
+        // 提交表单
+        document.getElementById('entry-form').onsubmit = async (e) => {
+            e.preventDefault();
+            if (!currentUser) return;
+
+            const amount = document.getElementById('amount').value;
+            const category = document.getElementById('category').value;
+            const date = document.getElementById('date').value;
+
+            try {
+                const path = `artifacts/${appId}/users/${currentUser.uid}/transactions`;
+                await addDoc(collection(db, path), {
+                    amount: parseFloat(amount),
+                    category,
+                    date,
+                    type: currentMode,
+                    createdAt: Date.now()
+                });
+
+                e.target.reset();
+                document.getElementById('date').valueAsDate = new Date();
+                showToast("账目已保存");
+            } catch (err) {
+                console.error(err);
+                showToast("保存失败");
+            }
+        };
+
+        // 删除记录
+        window.deleteEntry = async (id) => {
+            if (!currentUser) return;
+            try {
+                const path = `artifacts/${appId}/users/${currentUser.uid}/transactions`;
+                await deleteDoc(doc(db, path, id));
+                showToast("已删除记录");
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        // 清空所有
+        window.clearAll = async () => {
+            if (!currentUser || transactions.length === 0) return;
+            if (!confirm("确定要删除所有记录吗？此操作不可撤销。")) return;
+
+            try {
+                const path = `artifacts/${appId}/users/${currentUser.uid}/transactions`;
+                const querySnapshot = await getDocs(collection(db, path));
+                const batch = writeBatch(db);
+                querySnapshot.forEach((doc) => {
+                    batch.delete(doc.ref);
+                });
+                await batch.commit();
+                showToast("已清空所有记录");
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        // 显示提示
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.style.opacity = '1';
+            setTimeout(() => t.style.opacity = '0', 2000);
+        }
+
+        // 初始化图标
+        lucide.createIcons();
+    </script>
+</body>
+</html>
