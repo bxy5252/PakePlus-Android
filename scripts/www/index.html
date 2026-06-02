@@ -1,0 +1,1845 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>修仙道途录 · 修炼打卡</title>
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --bg-card: #141420dd;
+            --gold: #c9a96e;
+            --gold-light: #e0c88a;
+            --gold-dark: #8b6f3f;
+            --text: #c8c8d4;
+            --text-dim: #7a7a8a;
+            --text-bright: #e8e4f0;
+            --border: #2a2a3a;
+            --red: #c0392b;
+            --red-light: #e74c3c;
+            --success: #5a9e7c;
+            --accent-blue: #4a90d9;
+            --purple: #9b59b6;
+            --realm-lianqi: #7eb8a0;
+            --realm-zhuji: #5b9bd5;
+            --realm-jiedan: #e8c84c;
+            --realm-yuanying: #b07cd8;
+            --realm-huashen: #e8734a;
+            --realm-lianxu: #4a90d9;
+            --realm-dacheng: #c0c0d0;
+            --realm-dujie: #e83030;
+            --realm-daozu: #ffd700;
+            --radius-sm: 6px;
+            --radius: 10px;
+            --radius-lg: 16px;
+            --shadow-card: 0 2px 16px rgba(0, 0, 0, 0.5);
+            --shadow-gold: 0 0 20px rgba(201, 169, 110, 0.25);
+            --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            --font-cn: 'Noto Serif SC', 'Source Han Serif SC', 'STSong', 'Songti SC', 'SimSun', 'KaiTi', serif;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .stars-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .star {
+            position: absolute;
+            background: #fff;
+            border-radius: 50%;
+            animation: twinkle var(--dur) ease-in-out infinite;
+            animation-delay: var(--delay);
+            opacity: 0;
+        }
+        @keyframes twinkle {
+            0%,
+            100% {
+                opacity: 0.15;
+                transform: scale(0.8);
+            }
+            50% {
+                opacity: 0.7;
+                transform: scale(1.3);
+            }
+        }
+        .app-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 16px 20px 100px;
+        }
+        .app-header {
+            text-align: center;
+            padding: 28px 0 10px;
+            position: relative;
+        }
+        .app-header .title {
+            font-family: var(--font-cn);
+            font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+            font-weight: 700;
+            color: var(--gold-light);
+            letter-spacing: 0.06em;
+            text-shadow: 0 0 30px rgba(201, 169, 110, 0.4);
+            margin-bottom: 2px;
+        }
+        .app-header .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            letter-spacing: 0.08em;
+            font-family: var(--font-cn);
+        }
+        .header-decor {
+            width: 80px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold-dark), var(--gold), var(--gold-dark), transparent);
+            margin: 10px auto 0;
+            border-radius: 1px;
+        }
+        .stats-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin: 16px 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+        .stat-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px 18px;
+            text-align: center;
+            min-width: 80px;
+            flex: 1 1 auto;
+            max-width: 160px;
+            backdrop-filter: blur(8px);
+            transition: var(--transition);
+        }
+        .stat-item:hover {
+            border-color: var(--gold-dark);
+            box-shadow: var(--shadow-gold);
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gold-light);
+            font-family: var(--font-cn);
+        }
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            letter-spacing: 0.04em;
+            margin-top: 2px;
+        }
+        .daily-reminder {
+            text-align: center;
+            padding: 10px 16px;
+            margin-bottom: 16px;
+            background: #1a1a2844;
+            border: 1px dashed var(--border);
+            border-radius: var(--radius);
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            letter-spacing: 0.03em;
+            display: none;
+        }
+        .daily-reminder.show {
+            display: block;
+            animation: fadeInDown 0.5s ease;
+        }
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .plans-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 16px;
+            position: relative;
+            z-index: 1;
+        }
+        @media (max-width: 400px) {
+            .plans-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .plan-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            cursor: default;
+            transition: var(--transition);
+            position: relative;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow-card);
+            overflow: hidden;
+        }
+        .plan-card:hover {
+            border-color: #4a4a5a;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.55), 0 0 30px rgba(201, 169, 110, 0.08);
+            transform: translateY(-2px);
+        }
+        .plan-card.breaking-through {
+            animation: breakthrough 0.8s ease;
+        }
+        @keyframes breakthrough {
+            0% {
+                box-shadow: 0 0 0 rgba(255, 215, 0, 0);
+                border-color: var(--border);
+            }
+            40% {
+                box-shadow: 0 0 50px rgba(255, 215, 0, 0.7);
+                border-color: #ffd700;
+            }
+            100% {
+                box-shadow: 0 0 0 rgba(255, 215, 0, 0);
+                border-color: var(--border);
+            }
+        }
+        .plan-card .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            gap: 8px;
+        }
+        .plan-card .plan-name {
+            font-family: var(--font-cn);
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-bright);
+            letter-spacing: 0.04em;
+            word-break: break-all;
+        }
+        .plan-card .btn-delete {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+            flex-shrink: 0;
+            line-height: 1;
+        }
+        .plan-card .btn-delete:hover {
+            color: var(--red-light);
+            background: #ff000015;
+        }
+        .realm-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            font-family: var(--font-cn);
+            border: 1px solid;
+            margin-bottom: 6px;
+        }
+        .realm-badge.lianqi {
+            color: var(--realm-lianqi);
+            border-color: var(--realm-lianqi);
+            background: #7eb8a012;
+        }
+        .realm-badge.zhuji {
+            color: var(--realm-zhuji);
+            border-color: var(--realm-zhuji);
+            background: #5b9bd512;
+        }
+        .realm-badge.jiedan {
+            color: var(--realm-jiedan);
+            border-color: var(--realm-jiedan);
+            background: #e8c84c12;
+        }
+        .realm-badge.yuanying {
+            color: var(--realm-yuanying);
+            border-color: var(--realm-yuanying);
+            background: #b07cd812;
+        }
+        .realm-badge.huashen {
+            color: var(--realm-huashen);
+            border-color: var(--realm-huashen);
+            background: #e8734a12;
+        }
+        .realm-badge.lianxu {
+            color: var(--realm-lianxu);
+            border-color: var(--realm-lianxu);
+            background: #4a90d912;
+        }
+        .realm-badge.dacheng {
+            color: var(--realm-dacheng);
+            border-color: var(--realm-dacheng);
+            background: #c0c0d012;
+        }
+        .realm-badge.dujie {
+            color: var(--realm-dujie);
+            border-color: var(--realm-dujie);
+            background: #e8303012;
+        }
+        .realm-badge.daozu {
+            color: var(--realm-daozu);
+            border-color: var(--realm-daozu);
+            background: #ffd70015;
+            text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+        }
+
+        /* 试炼任务提示 */
+        .trial-hint {
+            background: #1a1a2818;
+            border: 1px dashed #3a3a4a;
+            border-radius: var(--radius-sm);
+            padding: 8px 12px;
+            margin: 8px 0;
+            font-size: 0.76rem;
+            color: #8a8a9a;
+            letter-spacing: 0.03em;
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            line-height: 1.5;
+        }
+        .trial-hint .trial-icon {
+            flex-shrink: 0;
+            font-size: 0.9rem;
+            margin-top: 1px;
+        }
+        .trial-hint .trial-text {
+            flex: 1;
+        }
+        .trial-hint .trial-label {
+            font-size: 0.65rem;
+            color: #555;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .progress-section {
+            margin: 8px 0 4px;
+        }
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            margin-bottom: 4px;
+            letter-spacing: 0.02em;
+        }
+        .progress-bar-outer {
+            height: 6px;
+            background: #1e1e30;
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
+        .progress-bar-inner {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(90deg, var(--realm-lianqi), var(--realm-jiedan), var(--realm-daozu));
+            position: relative;
+        }
+        .progress-bar-inner.daozu-complete {
+            background: linear-gradient(90deg, #ffd700, #fff8dc, #ffd700);
+            animation: shimmer 2s ease-in-out infinite;
+        }
+        @keyframes shimmer {
+            0%,
+            100% {
+                filter: brightness(1);
+            }
+            50% {
+                filter: brightness(1.6);
+            }
+        }
+        .card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .streak-badge {
+            font-size: 0.72rem;
+            color: var(--gold);
+            letter-spacing: 0.03em;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+        .streak-badge .flame {
+            font-size: 0.9rem;
+        }
+        .btn-group {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .btn-checkin {
+            padding: 7px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid var(--gold-dark);
+            background: linear-gradient(135deg, #1a1410, #201810);
+            color: var(--gold-light);
+            letter-spacing: 0.04em;
+            font-family: var(--font-cn);
+            transition: var(--transition);
+            white-space: nowrap;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-checkin:hover:not(:disabled) {
+            background: linear-gradient(135deg, #2a1f14, #302218);
+            border-color: var(--gold);
+            box-shadow: 0 0 16px rgba(201, 169, 110, 0.35);
+            transform: translateY(-1px);
+        }
+        .btn-checkin:active:not(:disabled) {
+            transform: scale(0.95);
+        }
+        .btn-checkin:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            border-color: #3a3a3a;
+            background: #1a1a1a;
+            color: #555;
+        }
+        .btn-checkin.checked-today {
+            background: #1a2a1a;
+            border-color: #3a5a3a;
+            color: #7ab87a;
+            cursor: default;
+        }
+        .btn-breakthrough {
+            padding: 7px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid #7b5ea7;
+            background: linear-gradient(135deg, #14101a, #1a1420);
+            color: #c0a0e0;
+            letter-spacing: 0.04em;
+            font-family: var(--font-cn);
+            transition: var(--transition);
+            white-space: nowrap;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-breakthrough:hover:not(:disabled) {
+            background: linear-gradient(135deg, #1f1528, #241a30);
+            border-color: #9b7bc0;
+            box-shadow: 0 0 18px rgba(155, 123, 192, 0.35);
+            transform: translateY(-1px);
+        }
+        .btn-breakthrough:active:not(:disabled) {
+            transform: scale(0.95);
+        }
+        .btn-breakthrough:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            border-color: #3a3a3a;
+            background: #1a1a1a;
+            color: #555;
+        }
+        .btn-breakthrough.completed {
+            background: #1a1a0a;
+            border-color: #5a5a2a;
+            color: #c0c060;
+            cursor: default;
+            border-color: #8a8a3a;
+        }
+
+        .logs-section {
+            margin-top: 14px;
+            border-top: 1px solid var(--border);
+            padding-top: 12px;
+            display: none;
+        }
+        .plan-card.expanded .logs-section {
+            display: block;
+            animation: fadeInDown 0.3s ease;
+        }
+        .logs-section .logs-title {
+            font-size: 0.75rem;
+            color: var(--gold-dark);
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+            font-family: var(--font-cn);
+            cursor: pointer;
+        }
+        .log-entry {
+            background: #0d0d18;
+            border-radius: var(--radius-sm);
+            padding: 8px 10px;
+            margin-bottom: 6px;
+            font-size: 0.78rem;
+            color: #a0a0b0;
+            border-left: 2px solid var(--border);
+            transition: var(--transition);
+        }
+        .log-entry.log-breakthrough {
+            border-left-color: #c0a0e0;
+            background: #14101e;
+        }
+        .log-entry:hover {
+            border-left-color: var(--gold-dark);
+        }
+        .log-entry .log-date {
+            font-size: 0.65rem;
+            color: #555;
+            margin-bottom: 2px;
+        }
+        .log-input-row {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+        }
+        .log-input-row input {
+            flex: 1;
+            background: #0d0d18;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 7px 10px;
+            color: var(--text);
+            font-size: 0.8rem;
+            outline: none;
+            transition: var(--transition);
+        }
+        .log-input-row input:focus {
+            border-color: var(--gold-dark);
+        }
+        .log-input-row .btn-add-log {
+            background: var(--gold-dark);
+            border: none;
+            color: #1a1a0a;
+            padding: 7px 12px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.78rem;
+            white-space: nowrap;
+            transition: var(--transition);
+        }
+        .log-input-row .btn-add-log:hover {
+            background: var(--gold);
+            transform: scale(1.03);
+        }
+        .expand-hint {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #444;
+            cursor: pointer;
+            margin-top: 6px;
+            letter-spacing: 0.03em;
+            transition: var(--transition);
+        }
+        .expand-hint:hover {
+            color: var(--gold-dark);
+        }
+        .fab-add {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #c9a96e, #a07840);
+            border: none;
+            color: #1a1a0f;
+            font-size: 1.6rem;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(201, 169, 110, 0.45);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+        .fab-add:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 28px rgba(201, 169, 110, 0.6);
+        }
+        .fab-add:active {
+            transform: scale(0.9);
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        .modal-dialog {
+            background: #1a1a28;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px 22px;
+            width: 90%;
+            max-width: 460px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+            animation: fadeInDown 0.3s ease;
+            position: relative;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        .modal-dialog h3 {
+            font-family: var(--font-cn);
+            color: var(--gold-light);
+            margin-bottom: 6px;
+            letter-spacing: 0.05em;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+        .modal-dialog .modal-subtitle {
+            text-align: center;
+            font-size: 0.78rem;
+            color: #777;
+            margin-bottom: 14px;
+            letter-spacing: 0.03em;
+        }
+        .modal-dialog label {
+            display: block;
+            font-size: 0.78rem;
+            color: #999;
+            margin-bottom: 4px;
+            letter-spacing: 0.03em;
+        }
+        .modal-dialog input,
+        .modal-dialog textarea {
+            width: 100%;
+            background: #0d0d18;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            color: var(--text-bright);
+            font-size: 0.9rem;
+            outline: none;
+            margin-bottom: 12px;
+            transition: var(--transition);
+            font-family: inherit;
+            resize: vertical;
+        }
+        .modal-dialog input:focus,
+        .modal-dialog textarea:focus {
+            border-color: var(--gold-dark);
+        }
+        .trial-display {
+            background: #14101e;
+            border: 1px solid #2a2038;
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            margin-bottom: 14px;
+            font-size: 0.82rem;
+            color: #b0a0c0;
+            letter-spacing: 0.03em;
+            line-height: 1.6;
+        }
+        .trial-display .trial-label-strong {
+            color: #c0a0e0;
+            font-weight: 600;
+            font-family: var(--font-cn);
+            letter-spacing: 0.05em;
+        }
+        .realm-transition {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin: 12px 0;
+            font-family: var(--font-cn);
+            font-size: 0.9rem;
+            letter-spacing: 0.04em;
+        }
+        .realm-transition .from-realm {
+            color: #999;
+        }
+        .realm-transition .arrow {
+            color: var(--gold);
+            font-size: 1.2rem;
+        }
+        .realm-transition .to-realm {
+            color: var(--gold-light);
+            font-weight: 700;
+            text-shadow: 0 0 8px rgba(201, 169, 110, 0.4);
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+        .btn-modal {
+            padding: 9px 20px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            transition: var(--transition);
+            border: 1px solid transparent;
+            font-family: var(--font-cn);
+        }
+        .btn-confirm {
+            background: #7b5ea7;
+            color: #f0e0ff;
+            border-color: #7b5ea7;
+        }
+        .btn-confirm:hover {
+            background: #8b6eb7;
+            box-shadow: 0 0 16px rgba(155, 123, 192, 0.45);
+        }
+        .btn-cancel {
+            background: transparent;
+            color: #888;
+            border-color: #3a3a3a;
+        }
+        .btn-cancel:hover {
+            color: #ccc;
+            border-color: #666;
+        }
+        .btn-danger {
+            background: #3a1010;
+            color: #e74c3c;
+            border-color: #5a2020;
+        }
+        .btn-danger:hover {
+            background: #4a1515;
+            border-color: #e74c3c;
+            box-shadow: 0 0 12px rgba(231, 76, 60, 0.3);
+        }
+        .breakthrough-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 300;
+            animation: btFlash 0.9s ease-out forwards;
+        }
+        @keyframes btFlash {
+            0% {
+                background: rgba(255, 215, 0, 0.45);
+                opacity: 1;
+            }
+            60% {
+                background: rgba(255, 215, 0, 0.15);
+                opacity: 0.8;
+            }
+            100% {
+                background: transparent;
+                opacity: 0;
+            }
+        }
+        .breakthrough-text {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            font-family: var(--font-cn);
+            font-size: clamp(1.4rem, 4vw, 2.4rem);
+            color: #ffd700;
+            z-index: 350;
+            pointer-events: none;
+            text-shadow: 0 0 40px rgba(255, 215, 0, 0.9);
+            letter-spacing: 0.1em;
+            white-space: nowrap;
+            animation: btText 1.6s ease-out forwards;
+        }
+        @keyframes btText {
+            0% {
+                transform: translate(-50%, -50%) scale(0.3);
+                opacity: 0;
+            }
+            25% {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 1;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -60%) scale(0.9);
+                opacity: 0;
+            }
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-dim);
+        }
+        .empty-state .empty-icon {
+            font-size: 3.5rem;
+            margin-bottom: 12px;
+            opacity: 0.5;
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-12px);
+            }
+        }
+        .empty-state p {
+            font-family: var(--font-cn);
+            letter-spacing: 0.05em;
+            font-size: 0.95rem;
+        }
+        .streak-bonus-hint {
+            display: inline-block;
+            background: #2a1a0a;
+            border: 1px solid #5a3a1a;
+            border-radius: 10px;
+            padding: 2px 8px;
+            font-size: 0.65rem;
+            color: #d0a060;
+            margin-left: 4px;
+            letter-spacing: 0.03em;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%,
+            100% {
+                opacity: 0.7;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+        @media (max-width: 680px) {
+            .app-container {
+                padding: 10px 12px 90px;
+            }
+            .plan-card {
+                padding: 14px;
+            }
+            .fab-add {
+                width: 46px;
+                height: 46px;
+                bottom: 20px;
+                right: 16px;
+                font-size: 1.4rem;
+            }
+            .stats-bar {
+                gap: 6px;
+            }
+            .stat-item {
+                padding: 8px 10px;
+                min-width: 60px;
+            }
+            .stat-value {
+                font-size: 1.2rem;
+            }
+            .stat-label {
+                font-size: 0.65rem;
+            }
+            .btn-checkin,
+            .btn-breakthrough {
+                padding: 6px 10px;
+                font-size: 0.72rem;
+            }
+            .trial-hint {
+                font-size: 0.7rem;
+                padding: 6px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="stars-container" id="starsContainer"></div>
+
+    <div class="app-container">
+        <header class="app-header">
+            <div class="title">修 仙 道 途 录</div>
+            <div class="subtitle">万 法 归 宗 · 步 步 证 道</div>
+            <div class="header-decor"></div>
+        </header>
+
+        <div class="stats-bar" id="statsBar">
+            <div class="stat-item">
+                <div class="stat-value" id="statLingli">0</div>
+                <div class="stat-label">⚡ 灵力值</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="statStreak">0</div>
+                <div class="stat-label">🔥 最长连修</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="statTotal">0</div>
+                <div class="stat-label">📜 修炼领域</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="statCheckins">0</div>
+                <div class="stat-label">🗓️ 总打卡数</div>
+            </div>
+        </div>
+
+        <div class="daily-reminder" id="dailyReminder">
+            <span class="reminder-icon">⏳</span> 道友，今日尚未修炼，莫让道心蒙尘，速速打卡精进！
+        </div>
+
+        <div class="plans-grid" id="plansGrid"></div>
+
+        <div class="empty-state" id="emptyState">
+            <div class="empty-icon">🏮</div>
+            <p>尚无修炼道途</p>
+            <p style="font-size:0.75rem;color:#555;">点击右下角「+」开辟新道途</p>
+        </div>
+    </div>
+
+    <button class="fab-add" id="fabAdd" title="开辟新道途">＋</button>
+
+    <script>
+        (function() {
+            // ==================== 常量 ====================
+            const REALMS = [
+                {
+                    name: '炼气期',
+                    sub: ['炼气初期', '炼气中期', '炼气后期', '炼气圆满'],
+                    cssClass: 'lianqi',
+                    emoji: '🌱',
+                    trials: [
+                        '初识灵气：完成基础概念学习，了解该领域全貌',
+                        '灵气入体：完成入门教程或书籍的前50%',
+                        '灵气运转：完成全部入门教程，整理学习笔记',
+                        '灵气充盈：通过入门阶段自我测试，根基已固',
+                    ],
+                },
+                {
+                    name: '筑基期',
+                    sub: ['筑基初期', '筑基中期', '筑基后期', '筑基圆满'],
+                    cssClass: 'zhuji',
+                    emoji: '🏛️',
+                    trials: [
+                        '筑造根基：掌握核心技能，完成第一个小练习',
+                        '夯实基础：完成3个以上针对性练习，熟练基本操作',
+                        '融会贯通：将所学知识串联，完成一个综合性练习',
+                        '根基圆满：核心技能运用自如，准备向更高层次迈进',
+                    ],
+                },
+                {
+                    name: '结丹期',
+                    sub: ['结丹初期', '结丹中期', '结丹后期', '结丹圆满'],
+                    cssClass: 'jiedan',
+                    emoji: '✨',
+                    trials: [
+                        '凝气成丹：独立完成一个中小型实战项目',
+                        '丹火淬炼：对项目进行优化重构，加深理解',
+                        '丹成异象：将项目分享出去，获取反馈并改进',
+                        '金丹大成：项目得到认可，知识已凝结为能力',
+                    ],
+                },
+                {
+                    name: '元婴期',
+                    sub: ['元婴初期', '元婴中期', '元婴后期', '元婴圆满'],
+                    cssClass: 'yuanying',
+                    emoji: '👶',
+                    trials: [
+                        '元婴初现：深入原理层，阅读源码或底层文档',
+                        '元婴成长：撰写深度技术笔记或文章至少2篇',
+                        '元婴出窍：能够向他人清晰讲解核心原理',
+                        '元婴大成：对底层机制有自己的理解与见解',
+                    ],
+                },
+                {
+                    name: '化神期',
+                    sub: ['化神初期', '化神中期', '化神后期', '化神圆满'],
+                    cssClass: 'huashen',
+                    emoji: '🔥',
+                    trials: [
+                        '神识初开：选择专精方向，制定深入计划',
+                        '神识扩展：完成专精方向的系统性学习',
+                        '神识凝实：在专精方向上产出高质量作品',
+                        '化神圆满：在该细分领域形成自己的方法论',
+                    ],
+                },
+                {
+                    name: '炼虚期',
+                    sub: ['炼虚初期', '炼虚中期', '炼虚后期', '炼虚圆满'],
+                    cssClass: 'lianxu',
+                    emoji: '🌌',
+                    trials: [
+                        '虚空探秘：研究大型开源项目或经典案例源码',
+                        '虚空遨游：为开源项目提交PR或被采纳建议',
+                        '虚空造物：参与或发起一个有影响力的项目',
+                        '炼虚合道：项目获得社区认可或有实际用户',
+                    ],
+                },
+                {
+                    name: '大乘期',
+                    sub: ['大乘初期', '大乘中期', '大乘后期', '大乘圆满'],
+                    cssClass: 'dacheng',
+                    emoji: '🏔️',
+                    trials: [
+                        '大乘初成：创造全新的原创作品或工具',
+                        '大乘弘法：公开发布作品并收获第一批用户/读者',
+                        '大乘普渡：作品帮助到他人，收到正向反馈',
+                        '大乘圆满：作品持续迭代，形成影响力',
+                    ],
+                },
+                {
+                    name: '渡劫期',
+                    sub: ['渡劫初期', '渡劫中期', '渡劫后期', '渡劫圆满'],
+                    cssClass: 'dujie',
+                    emoji: '⚡',
+                    trials: [
+                        '天劫降临：接受真实世界的严峻考验（面试/评审/上线）',
+                        '雷劫淬体：在高压环境下解决复杂问题',
+                        '心魔考验：克服瓶颈期，保持道心坚定',
+                        '渡劫成功：通过考验，能力得到权威或市场验证',
+                    ],
+                },
+                {
+                    name: '道祖境',
+                    sub: ['道祖初期', '道祖中期', '道祖后期', '道祖圆满'],
+                    cssClass: 'daozu',
+                    emoji: '☀️',
+                    trials: [
+                        '万法初通：成为该领域的公认专家',
+                        '道法自然：能够触类旁通，跨领域融合创新',
+                        '开宗立派：建立自己的理论体系或学派',
+                        '道祖圆满：万法归宗，成为领域底层规则的化身',
+                    ],
+                },
+            ];
+            const TOTAL_STEPS = 36;
+            const STORAGE_KEY = 'xiuLianDaoTu_plans_v3';
+
+            // ==================== 数据管理 ====================
+            let plans = [];
+            let globalMaxStreak = 0;
+            let totalCheckinsAll = 0;
+
+            function loadData() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    if (raw) {
+                        plans = JSON.parse(raw);
+                        plans.forEach(p => {
+                            if (!p.checkinDates) p.checkinDates = [];
+                            if (!p.logs) p.logs = [];
+                            if (p.realmIndex === undefined) p.realmIndex = 0;
+                            if (p.subRealmIndex === undefined) p.subRealmIndex = 0;
+                            if (!p.id) p.id = 'plan_' + Date.now() + '_' + Math.random().toString(36).slice(
+                                2, 8);
+                            if (!p.createdAt) p.createdAt = new Date().toISOString();
+                        });
+                    }
+                } catch (e) {
+                    console.warn('数据加载失败，已重置', e);
+                    plans = [];
+                }
+                recalcStats();
+            }
+
+            function saveData() {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(plans));
+                } catch (e) {
+                    showToast('储物袋空间不足，请清理旧日志', 'warning');
+                }
+                recalcStats();
+            }
+
+            function recalcStats() {
+                globalMaxStreak = 0;
+                totalCheckinsAll = 0;
+                plans.forEach(p => {
+                    const s = calcStreak(p.checkinDates);
+                    if (s > globalMaxStreak) globalMaxStreak = s;
+                    totalCheckinsAll += (p.checkinDates || []).length;
+                });
+                updateStatsUI();
+            }
+
+            function calcStreak(checkinDates) {
+                if (!checkinDates || checkinDates.length === 0) return 0;
+                const sorted = [...new Set(checkinDates)].sort().reverse();
+                const today = getTodayStr();
+                const yesterday = getDateStr(new Date(Date.now() - 86400000));
+                if (sorted[0] !== today && sorted[0] !== yesterday) return 0;
+                let streak = 0;
+                let checkDate = new Date(sorted[0] + 'T00:00:00');
+                for (const dateStr of sorted) {
+                    const d = new Date(dateStr + 'T00:00:00');
+                    const diffDays = Math.round((checkDate - d) / 86400000);
+                    if (diffDays === 0) {
+                        streak++;
+                        checkDate = new Date(d.getTime() - 86400000);
+                    } else if (diffDays === 1 && streak === 0) {
+                        streak++;
+                        checkDate = new Date(d.getTime() - 86400000);
+                    } else {
+                        break;
+                    }
+                }
+                return streak;
+            }
+
+            function getTodayStr() {
+                return new Date().toISOString().split('T')[0];
+            }
+
+            function getDateStr(date) {
+                return date.toISOString().split('T')[0];
+            }
+
+            function hasCheckedInToday(plan) {
+                return plan.checkinDates && plan.checkinDates.includes(getTodayStr());
+            }
+
+            function getPlanStepIndex(plan) {
+                return plan.realmIndex * 4 + plan.subRealmIndex;
+            }
+
+            function getPlanRealmInfo(plan) {
+                const realm = REALMS[plan.realmIndex] || REALMS[0];
+                const subName = realm.sub[plan.subRealmIndex] || realm.sub[0];
+                const stepIndex = getPlanStepIndex(plan);
+                const progress = Math.min(100, Math.round((stepIndex / TOTAL_STEPS) * 100));
+                const isComplete = plan.realmIndex >= 8 && plan.subRealmIndex >= 3;
+                const trialTask = realm.trials[plan.subRealmIndex] || '完成当前境界修炼';
+                return { realm, subName, stepIndex, progress, isComplete, realmEmoji: realm.emoji, cssClass: realm
+                        .cssClass, trialTask };
+            }
+
+            function getNextRealmInfo(plan) {
+                if (getPlanRealmInfo(plan).isComplete) return null;
+                let nextRealmIdx = plan.realmIndex;
+                let nextSubIdx = plan.subRealmIndex + 1;
+                if (nextSubIdx >= 4) {
+                    nextSubIdx = 0;
+                    nextRealmIdx++;
+                    if (nextRealmIdx >= REALMS.length) {
+                        nextRealmIdx = REALMS.length - 1;
+                        nextSubIdx = 3;
+                    }
+                }
+                const realm = REALMS[nextRealmIdx] || REALMS[0];
+                const subName = realm.sub[nextSubIdx] || realm.sub[0];
+                return { realm, subName, realmEmoji: realm.emoji, cssClass: realm.cssClass };
+            }
+
+            // ==================== UI渲染 ====================
+            function updateStatsUI() {
+                document.getElementById('statLingli').textContent = computeTotalLingli();
+                document.getElementById('statStreak').textContent = globalMaxStreak;
+                document.getElementById('statTotal').textContent = plans.length;
+                document.getElementById('statCheckins').textContent = totalCheckinsAll;
+            }
+
+            function computeTotalLingli() {
+                let lingli = 0;
+                plans.forEach(p => {
+                    lingli += (p.checkinDates || []).length * 10;
+                    const streak = calcStreak(p.checkinDates);
+                    if (streak >= 30) lingli += streak * 2;
+                    else if (streak >= 7) lingli += streak;
+                    lingli += p.realmIndex * 30;
+                    if (p.realmIndex >= 8 && p.subRealmIndex >= 3) lingli += 200;
+                });
+                return lingli;
+            }
+
+            function renderAll() {
+                const grid = document.getElementById('plansGrid');
+                const emptyState = document.getElementById('emptyState');
+                const reminder = document.getElementById('dailyReminder');
+
+                if (plans.length === 0) {
+                    grid.innerHTML = '';
+                    emptyState.style.display = 'block';
+                    reminder.classList.remove('show');
+                } else {
+                    emptyState.style.display = 'none';
+                    grid.innerHTML = plans.map((p, idx) => renderPlanCard(p, idx)).join('');
+                    bindCardEvents();
+                    const allCheckedIn = plans.every(p => hasCheckedInToday(p));
+                    const anyCheckedIn = plans.some(p => hasCheckedInToday(p));
+                    if (allCheckedIn && plans.length > 0) {
+                        reminder.classList.remove('show');
+                    } else if (!anyCheckedIn) {
+                        reminder.classList.add('show');
+                        reminder.innerHTML =
+                            '<span class="reminder-icon">⏳</span> 道友，今日尚未修炼，莫让道心蒙尘，速速打卡精进！';
+                    } else {
+                        reminder.classList.add('show');
+                        reminder.innerHTML =
+                            '<span class="reminder-icon">⏳</span> 道友，部分道途尚未修炼，善始善终方为正道！';
+                    }
+                }
+                updateStatsUI();
+                updateFabPosition();
+            }
+
+            function renderPlanCard(plan, index) {
+                const info = getPlanRealmInfo(plan);
+                const checkedToday = hasCheckedInToday(plan);
+                const streak = calcStreak(plan.checkinDates);
+                const logsCount = (plan.logs || []).length;
+
+                let checkinBtnClass = 'btn-checkin';
+                let checkinBtnText = '⚔️ 修炼打卡';
+                let checkinDisabled = '';
+                if (checkedToday) {
+                    checkinBtnClass = 'btn-checkin checked-today';
+                    checkinBtnText = '✅ 今日已修';
+                    checkinDisabled = 'disabled';
+                }
+
+                let btBtnClass = 'btn-breakthrough';
+                let btBtnText = '⚡ 渡劫突破';
+                let btDisabled = '';
+                if (info.isComplete) {
+                    btBtnClass = 'btn-breakthrough completed';
+                    btBtnText = '☀️ 已证道祖';
+                    btDisabled = 'disabled';
+                }
+
+                const progressBarClass = info.isComplete ? 'progress-bar-inner daozu-complete' : 'progress-bar-inner';
+                const streakBonus = streak >= 7 ?
+                    '<span class="streak-bonus-hint" title="连续修炼7天以上，道心稳固">✨道心稳固</span>' :
+                    '';
+
+                return `
+                <div class="plan-card" data-plan-index="${index}" data-plan-id="${plan.id}">
+                    <div class="card-header">
+                        <span class="plan-name">${escapeHTML(plan.name)}</span>
+                        <button class="btn-delete" data-action="delete" data-plan-id="${plan.id}" title="斩断此道途">✕</button>
+                    </div>
+                    <span class="realm-badge ${info.cssClass}">${info.realmEmoji} ${info.realm.name} · ${info.subName}</span>
+                    <div class="trial-hint">
+                        <span class="trial-icon">📋</span>
+                        <span class="trial-text">
+                            <span class="trial-label">当前试炼</span><br>
+                            ${escapeHTML(info.trialTask)}
+                        </span>
+                    </div>
+                    <div class="progress-section">
+                        <div class="progress-info">
+                            <span>道途进度</span>
+                            <span>${info.stepIndex} / ${TOTAL_STEPS} 步 · ${info.progress}%</span>
+                        </div>
+                        <div class="progress-bar-outer">
+                            <div class="${progressBarClass}" style="width:${info.progress}%;"></div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <span class="streak-badge">
+                            <span class="flame">🔥</span> 连续修炼 <strong>${streak}</strong> 天${streakBonus}
+                        </span>
+                        <div class="btn-group">
+                            <button class="${checkinBtnClass}" data-action="checkin" data-plan-id="${plan.id}" ${checkinDisabled}>${checkinBtnText}</button>
+                            <button class="${btBtnClass}" data-action="breakthrough" data-plan-id="${plan.id}" ${btDisabled}>${btBtnText}</button>
+                        </div>
+                    </div>
+                    <div class="logs-section">
+                        <div class="logs-title" data-action="toggleLogs">📜 修炼日志 (${logsCount}条) ▾</div>
+                        <div class="logs-list" data-plan-id="${plan.id}">${renderLogsList(plan)}</div>
+                        <div class="log-input-row">
+                            <input type="text" placeholder="记录修炼心得..." data-action="logInput" data-plan-id="${plan.id}" maxlength="200">
+                            <button class="btn-add-log" data-action="addLog" data-plan-id="${plan.id}">记下</button>
+                        </div>
+                    </div>
+                    <div class="expand-hint" data-action="toggleExpand">▼ 展开详情</div>
+                </div>`;
+            }
+
+            function renderLogsList(plan) {
+                const logs = plan.logs || [];
+                if (logs.length === 0)
+                    return '<div style="font-size:0.7rem;color:#444;padding:4px 0;">尚无修炼日志</div>';
+                return logs.slice().reverse().slice(0, 15).map(l => {
+                    const isBreakthrough = l.type === 'breakthrough';
+                    const entryClass = isBreakthrough ? 'log-entry log-breakthrough' : 'log-entry';
+                    const icon = isBreakthrough ? '⚡' : '🕯️';
+                    return `
+                    <div class="${entryClass}">
+                        <div class="log-date">${icon} ${l.date}${isBreakthrough?' · 突破':''}</div>
+                        <div>${escapeHTML(l.content)}</div>
+                    </div>`;
+                }).join('');
+            }
+
+            function bindCardEvents() {
+                const grid = document.getElementById('plansGrid');
+                const newGrid = grid.cloneNode(true);
+                grid.parentNode.replaceChild(newGrid, grid);
+
+                newGrid.addEventListener('click', function(e) {
+                    const target = e.target;
+                    const action = target.dataset.action;
+                    const planId = target.dataset.planId;
+                    if (action === 'delete') {
+                        e.stopPropagation();
+                        confirmDeletePlan(planId);
+                    } else if (action === 'checkin') {
+                        e.stopPropagation();
+                        handleCheckin(planId);
+                    } else if (action === 'breakthrough') {
+                        e.stopPropagation();
+                        handleBreakthroughClick(planId);
+                    } else if (action === 'addLog') {
+                        e.stopPropagation();
+                        const input = newGrid.querySelector(
+                            `input[data-action="logInput"][data-plan-id="${planId}"]`);
+                        if (input && input.value.trim()) {
+                            addLog(planId, input.value.trim(), 'daily');
+                            input.value = '';
+                        }
+                    } else if (action === 'toggleExpand') {
+                        e.stopPropagation();
+                        const card = target.closest('.plan-card');
+                        if (card) toggleCardExpand(card);
+                    } else if (action === 'toggleLogs') {
+                        e.stopPropagation();
+                        const logsList = target.nextElementSibling;
+                        if (logsList && logsList.classList.contains('logs-list')) {
+                            const isHidden = logsList.style.display === 'none';
+                            logsList.style.display = isHidden ? 'block' : 'none';
+                            target.textContent = target.textContent.replace(isHidden ? '▸' : '▾', isHidden ?
+                                '▾' : '▸');
+                        }
+                    }
+                });
+
+                newGrid.addEventListener('click', function(e) {
+                    const card = e.target.closest('.plan-card');
+                    if (card && !e.target.closest('button') && !e.target.closest('input') && !e.target.closest(
+                            '.log-input-row') && !e.target.closest('.logs-title') && !e.target.closest(
+                            '.expand-hint') && !e.target.closest('.btn-group')) {
+                        toggleCardExpand(card);
+                    }
+                });
+
+                newGrid.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && e.target.dataset.action === 'logInput') {
+                        const planId = e.target.dataset.planId;
+                        const val = e.target.value.trim();
+                        if (val) {
+                            addLog(planId, val, 'daily');
+                            e.target.value = '';
+                        }
+                    }
+                });
+            }
+
+            function toggleCardExpand(card) {
+                const isExpanded = card.classList.contains('expanded');
+                if (isExpanded) {
+                    card.classList.remove('expanded');
+                    card.querySelector('.expand-hint').textContent = '▼ 展开详情';
+                } else {
+                    card.classList.add('expanded');
+                    card.querySelector('.expand-hint').textContent = '▲ 收起详情';
+                    const planId = card.querySelector('[data-plan-id]')?.dataset.planId;
+                    if (planId) {
+                        const plan = plans.find(p => p.id === planId);
+                        if (plan) {
+                            const logsList = card.querySelector('.logs-list');
+                            if (logsList) logsList.innerHTML = renderLogsList(plan);
+                            const logsTitle = card.querySelector('.logs-title');
+                            if (logsTitle) logsTitle.textContent =
+                                `📜 修炼日志 (${(plan.logs||[]).length}条) ▾`;
+                        }
+                    }
+                }
+            }
+
+            // ==================== 打卡逻辑（不再提升境界） ====================
+            function handleCheckin(planId) {
+                const plan = plans.find(p => p.id === planId);
+                if (!plan) return;
+                if (hasCheckedInToday(plan)) return;
+                const today = getTodayStr();
+                plan.checkinDates.push(today);
+                saveData();
+                renderAll();
+                showToast('⚡ 修炼打卡成功，灵力+10，道心愈加稳固！', 'success');
+                // 自动展开卡片以便记录日志
+                setTimeout(() => {
+                    const card = document.querySelector(`.plan-card[data-plan-id="${planId}"]`);
+                    if (card && !card.classList.contains('expanded')) {
+                        card.classList.add('expanded');
+                        card.querySelector('.expand-hint').textContent = '▲ 收起详情';
+                        const planRef = plans.find(p => p.id === planId);
+                        if (planRef) {
+                            const logsList = card.querySelector('.logs-list');
+                            if (logsList) logsList.innerHTML = renderLogsList(planRef);
+                            const logsTitle = card.querySelector('.logs-title');
+                            if (logsTitle) logsTitle.textContent =
+                                `📜 修炼日志 (${(planRef.logs||[]).length}条) ▾`;
+                        }
+                    }
+                    const input = document.querySelector(`input[data-action="logInput"][data-plan-id="${planId}"]`);
+                    if (input) input.focus();
+                }, 300);
+            }
+
+            // ==================== 突破逻辑 ====================
+            function handleBreakthroughClick(planId) {
+                const plan = plans.find(p => p.id === planId);
+                if (!plan) return;
+                const info = getPlanRealmInfo(plan);
+                if (info.isComplete) return;
+
+                const nextInfo = getNextRealmInfo(plan);
+                if (!nextInfo) return;
+
+                const isBigBreakthrough = (plan.subRealmIndex === 3); // 从小境界3→下一个大境界0
+                const streak = calcStreak(plan.checkinDates);
+
+                showBreakthroughModal(plan, info, nextInfo, isBigBreakthrough, streak);
+            }
+
+            function showBreakthroughModal(plan, currentInfo, nextInfo, isBigBreakthrough, streak) {
+                const existing = document.querySelector('.modal-overlay');
+                if (existing) existing.remove();
+
+                const streakBonusText = streak >= 7 ?
+                    `<p style="text-align:center;color:#d0a060;font-size:0.78rem;margin:4px 0;">🔥 你已连续修炼 <strong>${streak}</strong> 天，道心稳固，正是突破良机！</p>` :
+                    '';
+
+                const bigLabel = isBigBreakthrough ?
+                    '<p style="text-align:center;color:#e8c84c;font-size:0.8rem;letter-spacing:0.05em;margin:4px 0;">⚠ 大境界突破 · 此乃重要里程碑</p>' :
+                    '';
+
+                const overlay = document.createElement('div');
+                overlay.className = 'modal-overlay';
+                overlay.innerHTML = `
+                    <div class="modal-dialog">
+                        <h3>⚡ ${isBigBreakthrough ? '大境界突破' : '境界突破'}</h3>
+                        ${bigLabel}
+                        ${streakBonusText}
+                        <div class="realm-transition">
+                            <span class="from-realm">${currentInfo.realmEmoji} ${currentInfo.realm.name}·${currentInfo.subName}</span>
+                            <span class="arrow">➤</span>
+                            <span class="to-realm">${nextInfo.realmEmoji} ${nextInfo.realm.name}·${nextInfo.subName}</span>
+                        </div>
+                        <div class="trial-display">
+                            <span class="trial-label-strong">📋 当前试炼任务：</span><br>
+                            ${escapeHTML(currentInfo.trialTask)}
+                        </div>
+                        <p style="font-size:0.75rem;color:#777;text-align:center;margin-bottom:10px;">
+                            请确认你已完成上述试炼，方可渡劫突破。
+                        </p>
+                        <label>突破心得（可选）</label>
+                        <textarea id="modalBreakthroughNote" placeholder="记录此次突破的感悟与心得..." rows="2" maxlength="300"></textarea>
+                        <div class="modal-buttons">
+                            <button class="btn-modal btn-cancel" id="modalBtCancel">尚未完成</button>
+                            <button class="btn-modal btn-confirm" id="modalBtConfirm">渡劫突破！</button>
+                        </div>
+                    </div>`;
+                document.body.appendChild(overlay);
+
+                const closeModal = () => {
+                    if (document.body.contains(overlay)) overlay.remove();
+                };
+
+                overlay.addEventListener('click', function(e) {
+                    if (e.target === overlay) closeModal();
+                });
+
+                document.getElementById('modalBtCancel').addEventListener('click', closeModal);
+
+                document.getElementById('modalBtConfirm').addEventListener('click', function() {
+                    const note = document.getElementById('modalBreakthroughNote').value.trim();
+                    executeBreakthrough(plan, currentInfo, nextInfo, isBigBreakthrough, note);
+                    closeModal();
+                });
+
+                // 回车确认
+                const textarea = document.getElementById('modalBreakthroughNote');
+                if (textarea) {
+                    textarea.focus();
+                    textarea.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter' && e.ctrlKey) {
+                            const note = textarea.value.trim();
+                            executeBreakthrough(plan, currentInfo, nextInfo, isBigBreakthrough, note);
+                            closeModal();
+                        }
+                    });
+                }
+            }
+
+            function executeBreakthrough(plan, currentInfo, nextInfo, isBigBreakthrough, note) {
+                const oldRealmIndex = plan.realmIndex;
+                plan.subRealmIndex++;
+                if (plan.subRealmIndex >= 4) {
+                    plan.subRealmIndex = 0;
+                    plan.realmIndex++;
+                    if (plan.realmIndex >= REALMS.length) {
+                        plan.realmIndex = REALMS.length - 1;
+                        plan.subRealmIndex = 3;
+                    }
+                }
+                const newRealmIndex = plan.realmIndex;
+
+                // 记录突破日志
+                if (!plan.logs) plan.logs = [];
+                const logContent = note || `成功突破至${nextInfo.realm.name}·${nextInfo.subName}`;
+                plan.logs.push({
+                    date: getTodayStr(),
+                    content: `【突破】${logContent}`,
+                    type: 'breakthrough',
+                });
+
+                saveData();
+                renderAll();
+
+                const isActualBigBreakthrough = (newRealmIndex > oldRealmIndex);
+                if (isActualBigBreakthrough) {
+                    triggerBreakthroughEffect(nextInfo.realm.name, nextInfo.realmEmoji);
+                    showToast(`🎉 恭喜突破至【${nextInfo.realm.name}】！道途又进一步！`, 'success');
+                } else {
+                    showToast(`✨ 突破成功！已踏入【${nextInfo.realm.name}·${nextInfo.subName}】`, 'success');
+                }
+
+                // 展开卡片
+                setTimeout(() => {
+                    const card = document.querySelector(`.plan-card[data-plan-id="${plan.id}"]`);
+                    if (card && !card.classList.contains('expanded')) {
+                        card.classList.add('expanded');
+                        card.querySelector('.expand-hint').textContent = '▲ 收起详情';
+                        const planRef = plans.find(p => p.id === plan.id);
+                        if (planRef) {
+                            const logsList = card.querySelector('.logs-list');
+                            if (logsList) logsList.innerHTML = renderLogsList(planRef);
+                            const logsTitle = card.querySelector('.logs-title');
+                            if (logsTitle) logsTitle.textContent =
+                                `📜 修炼日志 (${(planRef.logs||[]).length}条) ▾`;
+                        }
+                    }
+                }, isActualBigBreakthrough ? 1200 : 400);
+            }
+
+            // ==================== 日志 ====================
+            function addLog(planId, content, type = 'daily') {
+                const plan = plans.find(p => p.id === planId);
+                if (!plan) return;
+                if (!plan.logs) plan.logs = [];
+                plan.logs.push({ date: getTodayStr(), content, type });
+                saveData();
+                renderAll();
+                setTimeout(() => {
+                    const card = document.querySelector(`.plan-card[data-plan-id="${planId}"]`);
+                    if (card && !card.classList.contains('expanded')) {
+                        card.classList.add('expanded');
+                        card.querySelector('.expand-hint').textContent = '▲ 收起详情';
+                    }
+                }, 100);
+            }
+
+            // ==================== 删除 ====================
+            function confirmDeletePlan(planId) {
+                const plan = plans.find(p => p.id === planId);
+                if (!plan) return;
+                showModal('斩断道途',
+                    `确定要斩断【${plan.name}】这条道途吗？所有修炼记录与境界修为将烟消云散。`,
+                    [
+                        { text: '取消', class: 'btn-cancel', action: 'close' },
+                        { text: '斩断道途', class: 'btn-danger', action: () => { deletePlan(planId); } },
+                    ]
+                );
+            }
+
+            function deletePlan(planId) {
+                plans = plans.filter(p => p.id !== planId);
+                saveData();
+                renderAll();
+                showToast('道途已斩断，有舍方有得。', 'info');
+            }
+
+            function addNewPlan(name) {
+                const plan = {
+                    id: 'plan_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+                    name: name.trim(),
+                    realmIndex: 0,
+                    subRealmIndex: 0,
+                    checkinDates: [],
+                    logs: [],
+                    createdAt: new Date().toISOString(),
+                };
+                plans.push(plan);
+                saveData();
+                renderAll();
+                showToast(`🎯 新道途【${plan.name}】已开辟，从炼气初期开始修炼吧！`, 'success');
+                setTimeout(() => {
+                    const card = document.querySelector(`.plan-card[data-plan-id="${plan.id}"]`);
+                    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 200);
+            }
+
+            // ==================== 突破特效 ====================
+            function triggerBreakthroughEffect(realmName, emoji) {
+                const overlay = document.createElement('div');
+                overlay.className = 'breakthrough-overlay';
+                document.body.appendChild(overlay);
+                setTimeout(() => overlay.remove(), 1000);
+                const textEl = document.createElement('div');
+                textEl.className = 'breakthrough-text';
+                textEl.textContent = `${emoji} 突破 · ${realmName} ${emoji}`;
+                document.body.appendChild(textEl);
+                setTimeout(() => textEl.remove(), 1700);
+                document.querySelectorAll('.plan-card').forEach(card => {
+                    card.classList.add('breaking-through');
+                    setTimeout(() => card.classList.remove('breaking-through'), 900);
+                });
+            }
+
+            // ==================== 模态弹窗 ====================
+            function showModal(title, message, buttons) {
+                const existing = document.querySelector('.modal-overlay');
+                if (existing) existing.remove();
+                const overlay = document.createElement('div');
+                overlay.className = 'modal-overlay';
+                overlay.innerHTML = `
+                    <div class="modal-dialog">
+                        <h3>${escapeHTML(title)}</h3>
+                        ${message ? `<p style="color:#888;font-size:0.85rem;margin-bottom:12px;text-align:center;">${escapeHTML(message)}</p>` : ''}
+                        <div class="modal-buttons">
+                            ${buttons.map((b, i) => `
+                                <button class="btn-modal ${b.class}" data-modal-index="${i}">${b.text}</button>
+                            `).join('')}
+                        </div>
+                    </div>`;
+                document.body.appendChild(overlay);
+                const closeModal = () => {
+                    if (document.body.contains(overlay)) overlay.remove();
+                };
+                overlay.addEventListener('click', function(e) {
+                    if (e.target === overlay) closeModal();
+                });
+                const btnElements = overlay.querySelectorAll('.btn-modal');
+                btnElements.forEach((btn, i) => {
+                    btn.addEventListener('click', () => {
+                        const action = buttons[i]?.action;
+                        if (action === 'close') closeModal();
+                        else if (typeof action === 'function') { action();
+                            closeModal(); }
+                    });
+                });
+                return { close: closeModal, overlay: overlay };
+            }
+
+            function showNewPlanModal() {
+                const existing = document.querySelector('.modal-overlay');
+                if (existing) existing.remove();
+                const overlay = document.createElement('div');
+                overlay.className = 'modal-overlay';
+                overlay.innerHTML = `
+                    <div class="modal-dialog">
+                        <h3>开辟新道途</h3>
+                        <p style="color:#888;font-size:0.85rem;margin-bottom:12px;text-align:center;">请为你的新修炼领域命名</p>
+                        <label>道途名称</label>
+                        <input id="modalNewPlanInput" type="text" placeholder="例如：Python修仙、古琴技艺、量子力学..." maxlength="40" autofocus>
+                        <div class="modal-buttons">
+                            <button class="btn-modal btn-cancel" id="modalCancelBtn">取消</button>
+                            <button class="btn-modal btn-confirm" id="modalConfirmBtn">开辟道途</button>
+                        </div>
+                    </div>`;
+                document.body.appendChild(overlay);
+                const closeModal = () => {
+                    if (document.body.contains(overlay)) overlay.remove();
+                };
+                overlay.addEventListener('click', function(e) {
+                    if (e.target === overlay) closeModal();
+                });
+                document.getElementById('modalCancelBtn').addEventListener('click', closeModal);
+                document.getElementById('modalConfirmBtn').addEventListener('click', function() {
+                    const input = document.getElementById('modalNewPlanInput');
+                    if (input && input.value.trim()) {
+                        addNewPlan(input.value.trim());
+                        closeModal();
+                    }
+                });
+                const input = document.getElementById('modalNewPlanInput');
+                if (input) {
+                    input.focus();
+                    input.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter' && input.value.trim()) {
+                            addNewPlan(input.value.trim());
+                            closeModal();
+                        }
+                    });
+                }
+            }
+
+            // ==================== Toast ====================
+            function showToast(message, type = 'info') {
+                const existing = document.querySelector('.toast-msg');
+                if (existing) existing.remove();
+                const toast = document.createElement('div');
+                toast.className = 'toast-msg';
+                toast.textContent = message;
+                toast.style.cssText = `
+                    position:fixed; bottom:90px; left:50%; transform:translateX(-50%);
+                    background:${type==='success'?'#1a3a1a':type==='warning'?'#3a2a0a':'#1a1a2a'};
+                    border:1px solid ${type==='success'?'#4a8a4a':type==='warning'?'#8a6a2a':'#4a4a6a'};
+                    color:${type==='success'?'#b0d8b0':type==='warning'?'#d8c090':'#a0a0c0'};
+                    padding:10px 20px; border-radius:20px; font-size:0.85rem; z-index:400;
+                    letter-spacing:0.03em; font-family:var(--font-cn);
+                    animation: fadeInUp 0.35s ease, fadeOut 0.4s 1.8s ease forwards;
+                    pointer-events:none; white-space:nowrap; max-width:90vw; text-align:center;
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => {
+                    if (document.body.contains(toast)) toast.remove();
+                }, 2400);
+            }
+
+            const toastStyle = document.createElement('style');
+            toastStyle.textContent = `
+                @keyframes fadeInUp { from{opacity:0;transform:translateX(-50%) translateY(16px);} to{opacity:1;transform:translateX(-50%) translateY(0);} }
+                @keyframes fadeOut { from{opacity:1;} to{opacity:0;} }
+            `;
+            document.head.appendChild(toastStyle);
+
+            // ==================== 悬浮按钮 ====================
+            function updateFabPosition() {
+                const fab = document.getElementById('fabAdd');
+                if (!fab) return;
+                fab.style.bottom = plans.length === 0 ? '40%' : '28px';
+            }
+
+            function bindFabButton() {
+                const fab = document.getElementById('fabAdd');
+                if (fab) {
+                    fab.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        showNewPlanModal();
+                    });
+                }
+            }
+
+            // ==================== 星空背景 ====================
+            function createStars() {
+                const container = document.getElementById('starsContainer');
+                if (!container) return;
+                let html = '';
+                for (let i = 0; i < 80; i++) {
+                    const size = Math.random() * 2.5 + 0.8;
+                    const x = Math.random() * 100;
+                    const y = Math.random() * 100;
+                    const dur = Math.random() * 3 + 2;
+                    const delay = Math.random() * 5;
+                    html +=
+                        `<div class="star" style="left:${x}%;top:${y}%;width:${size}px;height:${size}px;--dur:${dur}s;--delay:${delay}s;"></div>`;
+                }
+                container.innerHTML = html;
+            }
+
+            // ==================== 键盘快捷键 ====================
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'n' && e.ctrlKey && !e.target.closest('input') && !e.target.closest('textarea')) {
+                    e.preventDefault();
+                    showNewPlanModal();
+                }
+            });
+
+            function escapeHTML(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            // ==================== 初始化 ====================
+            function init() {
+                createStars();
+                loadData();
+                renderAll();
+                bindFabButton();
+                checkDailyReminder();
+                const now = new Date();
+                const msUntilMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime() -
+                    now.getTime();
+                setTimeout(() => {
+                    checkDailyReminder();
+                    setInterval(checkDailyReminder, 86400000);
+                }, msUntilMidnight + 1000);
+                console.log('🏮 修仙道途录已就绪');
+                console.log('   - 点击「⚔️ 修炼打卡」记录每日修习');
+                console.log('   - 完成试炼后点击「⚡ 渡劫突破」提升境界');
+                console.log('   - 打卡与突破分离，真正以学为进');
+                console.log('   - 快捷键 Ctrl+N 快速开辟道途');
+                console.log('   大道五十，天衍四九，人遁其一。道友，请！');
+            }
+
+            function checkDailyReminder() {
+                if (plans.length === 0) {
+                    document.getElementById('dailyReminder').classList.remove('show');
+                    return;
+                }
+                const anyCheckedIn = plans.some(p => hasCheckedInToday(p));
+                const allCheckedIn = plans.every(p => hasCheckedInToday(p));
+                const reminder = document.getElementById('dailyReminder');
+                if (allCheckedIn) {
+                    reminder.classList.remove('show');
+                } else if (!anyCheckedIn) {
+                    reminder.classList.add('show');
+                    reminder.innerHTML =
+                        '<span class="reminder-icon">⏳</span> 道友，今日尚未修炼，莫让道心蒙尘，速速打卡精进！';
+                }
+            }
+
+            init();
+        })();
+    </script>
+</body>
+</html>
